@@ -1,0 +1,39 @@
+{
+  "name": "radiosonde-tracker",
+  "version": "1.0.0",
+  "description": "Receives radiosonde_auto_rx UDP payload summaries, shows live sonde targets in the dashboard and logs every packet to JSONL.",
+  "recordings_subdir": "radiosonde",
+  "arguments": [
+    { "name": "udp_port", "flag": "--udp_port", "type": "int", "default": 55673, "description": "UDP port auto_rx sends payload summaries to (payload_summary_port)." },
+    { "name": "timeout",  "flag": "--timeout",  "type": "int", "default": 300,   "description": "Seconds without a packet before a sonde is dropped from the table." }
+  ],
+  "sockets": [
+    { "name": "api", "type": "tcp", "description": "Live sonde targets (GET /sondes)" }
+  ],
+  "ui": [
+    {
+      "id": "sondes",
+      "type": "table",
+      "title": "RADIOSONDES",
+      "region": "sidebar",
+      "default": true,
+      "socket": "api",
+      "get": "/sondes",
+      "interval": 2000,
+      "empty_text": "No sondes",
+      "columns": [
+        { "label": "ID",  "path": "callsign" },
+        { "label": "LAT", "path": "latitude",  "fmt": "f6" },
+        { "label": "LON", "path": "longitude", "fmt": "f6" },
+        { "label": "ALT", "path": "altitude",  "fmt": "int" }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "name": "radiosonde_tracker",
+      "command": "/usr/bin/python3 {module_dir}/radiosonde.py --udp_port {arg:udp_port} --timeout {arg:timeout} --api_port {socket:api} --output-dir {recordings_subdir}",
+      "directory": "{module_dir}"
+    }
+  ]
+}
