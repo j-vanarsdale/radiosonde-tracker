@@ -1,14 +1,37 @@
 {
   "name": "radiosonde-tracker",
-  "version": "1.0.0",
-  "description": "Receives radiosonde_auto_rx UDP payload summaries, shows live sonde targets in the dashboard and logs every packet to JSONL.",
+  "version": "1.1.0",
+  "description": "Receives radiosonde_auto_rx UDP payload summaries, lists live sondes in the dashboard with a TRACK button that points the gimbal at one, and logs every packet to JSONL.",
   "recordings_subdir": "radiosonde",
   "arguments": [
-    { "name": "udp_port", "flag": "--udp_port", "type": "int", "default": 55673, "description": "UDP port auto_rx sends payload summaries to (payload_summary_port)." },
-    { "name": "timeout",  "flag": "--timeout",  "type": "int", "default": 300,   "description": "Seconds without a packet before a sonde is dropped from the table." }
+    {
+      "name": "udp_port",
+      "flag": "--udp_port",
+      "type": "int",
+      "default": 55673,
+      "description": "UDP port auto_rx sends payload summaries to (payload_summary_port)."
+    },
+    {
+      "name": "timeout",
+      "flag": "--timeout",
+      "type": "int",
+      "default": 300,
+      "description": "Seconds without a packet before a sonde is dropped from the table."
+    },
+    {
+      "name": "gimbal_url",
+      "flag": "--gimbal_url",
+      "type": "str",
+      "default": "http://127.0.0.1:5001",
+      "description": "Base URL of the gimbal-point API."
+    }
   ],
   "sockets": [
-    { "name": "api", "type": "tcp", "description": "Live sonde targets (GET /sondes)" }
+    {
+      "name": "api",
+      "type": "tcp",
+      "description": "Live sonde targets (GET /sondes)"
+    }
   ],
   "ui": [
     {
@@ -22,17 +45,43 @@
       "interval": 2000,
       "empty_text": "No sondes",
       "columns": [
-        { "label": "ID",  "path": "callsign" },
-        { "label": "LAT", "path": "latitude",  "fmt": "f6" },
-        { "label": "LON", "path": "longitude", "fmt": "f6" },
-        { "label": "ALT", "path": "altitude",  "fmt": "int" }
-      ]
+        {
+          "label": "ID",
+          "path": "callsign"
+        },
+        {
+          "label": "LAT",
+          "path": "latitude",
+          "fmt": "f6"
+        },
+        {
+          "label": "LON",
+          "path": "longitude",
+          "fmt": "f6"
+        },
+        {
+          "label": "ALT",
+          "path": "altitude",
+          "fmt": "int"
+        }
+      ],
+      "row_action": {
+        "label": "TRACK",
+        "method": "PUT",
+        "path": "/sondes/track",
+        "key": "callsign"
+      },
+      "stop_action": {
+        "label": "\u25a0 TRACKING",
+        "method": "DELETE",
+        "path": "/sondes/track"
+      }
     }
   ],
   "programs": [
     {
       "name": "radiosonde_tracker",
-      "command": "/usr/bin/python3 {module_dir}/radiosonde.py --udp_port {arg:udp_port} --timeout {arg:timeout} --api_port {socket:api} --output-dir {recordings_subdir}",
+      "command": "/usr/bin/python3 {module_dir}/radiosonde.py --udp_port {arg:udp_port} --timeout {arg:timeout} --api_port {socket:api} --output-dir {recordings_subdir} --gimbal_url {arg:gimbal_url}",
       "directory": "{module_dir}"
     }
   ]
